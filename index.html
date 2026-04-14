@@ -1,43 +1,10 @@
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
-
-    <style>
-      body { margin: 0; overflow: hidden; }
-      #controls {
-        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-        width: 80%; max-width: 300px; background: rgba(255, 255, 255, 0.9);
-        padding: 20px; border-radius: 20px; z-index: 999; text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-family: sans-serif;
-      }
-      input[type=range] { width: 100%; accent-color: #4285f4; }
-    </style>
-  </head>
-  <body>
-    
-    <a-scene mindar-image="imageTargetSrc: targets.mind;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <a-asset-item id="engranesModel" src="engranes.glb"></a-asset-item>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity mindar-image-target="targetIndex: 0">
+<a-entity mindar-image-target="targetIndex: 0">
         <a-gltf-model id="modelo3D" 
                       src="#engranesModel" 
                       rotation="90 0 0" 
                       position="0 0 0" 
                       scale="0.5 0.5 0.5"
-                      animation-mixer="loop: repeat; timeScale: 1">
+                      animation-mixer="clip: *; loop: repeat; timeScale: 1">
         </a-gltf-model>
       </a-entity>
     </a-scene>
@@ -53,9 +20,13 @@
 
       slider.addEventListener('input', (e) => {
         const speed = parseFloat(e.target.value);
-        // Actualizamos el componente de animación de A-Frame Extras
-        model.setAttribute('animation-mixer', {timeScale: speed});
+        // CAMBIO AQUÍ: Usamos una forma más robusta de actualizar solo la velocidad
+        model.setAttribute('animation-mixer', 'timeScale', speed);
+      });
+
+      // TRUCO EXTRA: Forzar el inicio de la animación cuando el modelo cargue
+      model.addEventListener('model-loaded', () => {
+        console.log("Modelo cargado correctamente");
+        model.setAttribute('animation-mixer', {clip: '*', timeScale: slider.value});
       });
     </script>
-  </body>
-</html>
