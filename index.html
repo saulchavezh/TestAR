@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      /* Estilo para el slider de velocidad */
+      #controls {
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+        width: 80%; max-width: 300px; background: white; padding: 15px;
+        border-radius: 15px; z-index: 999; text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <a-asset-item id="engranesModel" src="./engranes.glb"></a-asset-item>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-gltf-model id="modelo3D" src="#engranesModel" 
+                      rotation="90 0 0" position="0 0 0" scale="0.5 0.5 0.5"
+                      animation-mixer>
+        </a-gltf-model>
+      </a-entity>
+    </a-scene>
+
+    <div id="controls">
+      <strong>Velocidad del Mecanismo</strong><br>
+      <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
+    </div>
+
+    <script>
+      const model = document.querySelector('#modelo3D');
+      const slider = document.querySelector('#speed');
+
+      // En A-Frame con MindAR, la velocidad se controla diferente
+      slider.addEventListener('input', (e) => {
+        const speed = e.target.value;
+        // Accedemos al motor de animación de A-Frame
+        model.setAttribute('animation-mixer', {timeScale: speed});
+      });
+    </script>
+  </body>
+</html>
