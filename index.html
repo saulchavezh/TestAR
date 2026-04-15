@@ -1,163 +1,179 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Libro AR - Mecanismo Profesional</title>
+    <title>Mecanismo AR - Edición Profesional</title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
     <style>
-      body { margin: 0; overflow: hidden; font-a: Arial, sans-serif; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-      /* CAPA DE INTERFAZ: Siempre al frente y visible */
-      #ui-overlay {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        pointer-events: none; /* Los toques pasan al 3D si no hay botones */
-        z-index: 9999;
-      }
+        /* CAPA DE INTERFAZ: Siempre al frente */
+        #ui-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+        }
 
-      /* Panel de Flechas de Rotación */
-      .rotation-controls {
-        position: absolute;
-        top: 20px; left: 20px;
-        display: grid;
-        grid-template-areas: 
-          ". up ."
-          "left . right"
-          ". down .";
-        gap: 8px;
-        pointer-events: auto; /* Activamos toques para los botones */
-      }
+        /* D-PAD de Rotación (Arriba-Izquierda) */
+        .rotation-controls {
+            position: absolute;
+            top: 25px; left: 25px;
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 10px;
+            pointer-events: auto;
+        }
 
-      .btn {
-        width: 55px; height: 55px;
-        background: rgba(255, 255, 255, 0.9);
-        border: 2px solid #4285f4;
-        border-radius: 12px;
-        font-size: 24px;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .btn:active { background: #4285f4; color: white; transform: scale(0.95); }
+        .btn {
+            width: 55px; height: 55px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #4285f4;
+            border-radius: 12px;
+            font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s;
+        }
+        .btn:active { background: #4285f4; color: white; transform: scale(0.9); }
 
-      #up { grid-area: up; } #down { grid-area: down; }
-      #left { grid-area: left; } #right { grid-area: right; }
+        #up { grid-area: up; } #down { grid-area: down; }
+        #left { grid-area: left; } #right { grid-area: right; }
 
-      /* Panel de Velocidad */
-      .speed-panel {
-        position: absolute;
-        bottom: 40px; left: 50%;
-        transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.95);
-        padding: 15px 25px;
-        border-radius: 25px;
-        width: 75%; max-width: 280px;
-        text-align: center;
-        pointer-events: auto;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      }
-      input[type=range] { width: 100%; accent-color: #4285f4; height: 30px; }
-      strong { color: #333; display: block; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; }
+        /* Panel de Velocidad (Abajo-Centro) */
+        .speed-panel {
+            position: absolute;
+            bottom: 40px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 30px;
+            width: 70%; max-width: 280px;
+            text-align: center;
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        input[type=range] { width: 100%; accent-color: #4285f4; height: 35px; cursor: pointer; }
+        strong { color: #333; display: block; margin-bottom: 5px; font-size: 13px; letter-spacing: 1px; }
     </style>
-  </head>
-  <body>
+
+    <script>
+        // COMPONENTE PARA INYECTAR REFLEJOS DORADOS REALISTAS
+        AFRAME.registerComponent('brillo-metalico', {
+            init: function () {
+                this.el.addEventListener('model-loaded', () => {
+                    const mesh = this.el.getObject3D('mesh');
+                    const textureLoader = new THREE.TextureLoader();
+                    
+                    textureLoader.load('reflexion.jpg', (texture) => {
+                        texture.mapping = THREE.EquirectangularReflectionMapping;
+                        texture.encoding = THREE.sRGBEncoding;
+
+                        mesh.traverse((node) => {
+                            if (node.isMesh) {
+                                // Forzamos el material a ser metálico y brillante
+                                node.material.envMap = texture;
+                                node.material.envMapIntensity = 2.8; 
+                                node.material.roughness = 0.15; 
+                                node.material.metalness = 1.0;  
+                                node.material.needsUpdate = true;
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    </script>
+</head>
+<body>
 
     <div id="ui-overlay">
-      <div class="rotation-controls">
-        <div class="btn" id="up">⬆️</div>
-        <div class="btn" id="left">⬅️</div>
-        <div class="btn" id="right">➡️</div>
-        <div class="btn" id="down">⬇️</div>
-      </div>
+        <div class="rotation-controls">
+            <div id="up" class="btn">⬆️</div>
+            <div id="left" class="btn">⬅️</div>
+            <div id="right" class="btn">➡️</div>
+            <div id="down" class="btn">⬇️</div>
+        </div>
 
-      <div class="speed-panel">
-        <strong>Velocidad</strong>
-        <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
-      </div>
+        <div class="speed-panel">
+            <strong>VELOCIDAD DE ENGRANAJES</strong>
+            <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
+        </div>
     </div>
     
     <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: no; uiLoading: no;" 
-             color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights: true, exposure: 1.5" 
+             renderer="colorManagement: true; physicallyCorrectLights: true; exposure: 1.5; toneMapping: ACESFilmic;"
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
-
-
       
-      <a-assets>
-        <a-asset-item id="engranesModel" src="engranes.glb"></a-asset-item>
-        <img id="refMap" src="reflexion.jpg">
-      </a-assets>
+        <a-assets>
+            <a-asset-item id="engranesModel" src="engranes.glb"></a-asset-item>
+        </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="target" mindar-image-target="targetIndex: 0">
-        <a-gltf-model id="modelo3D" 
-                      src="#engranesModel" 
-                      rotation="90 0 0" 
-                      position="0 0 0" 
-                      scale="0.5 0.5 0.5"
-                      animation-mixer="clip: *; timeScale: 1; loop: repeat;"
-                      environment="map: #refMap; intensity: 1.5;">
-        </a-gltf-model>
-      </a-entity>
+        <a-entity id="target" mindar-image-target="targetIndex: 0">
+            <a-gltf-model id="modelo3D" 
+                          src="#engranesModel" 
+                          rotation="90 0 0" 
+                          position="0 0 0" 
+                          scale="0.5 0.5 0.5"
+                          animation-mixer="clip: *; timeScale: 1; loop: repeat; crossFadeDuration: 0"
+                          brillo-metalico> 
+            </a-gltf-model>
+        </a-entity>
 
-      <a-light type="ambient" intensity="0.7"></a-light>
-      <a-light type="directional" position="1 2 1" intensity="1"></a-light>
-      
-      <a-sky src="#refMap" visible="false"></a-sky>
-
+        <a-light type="ambient" intensity="0.8"></a-light>
+        <a-light type="directional" position="1 2 1" intensity="1.2"></a-light>
     </a-scene>
 
     <script>
-      const model = document.querySelector('#modelo3D');
-      const target = document.querySelector('#target');
-      const slider = document.querySelector('#speed');
+        const model = document.querySelector('#modelo3D');
+        const target = document.querySelector('#target');
+        const slider = document.querySelector('#speed');
 
-      // --- LÓGICA DE ROTACIÓN ---
-      let rotX = 90; let rotY = 0;
-      const step = 15;
+        // --- GESTIÓN DE ROTACIÓN ---
+        let rotX = 90; let rotY = 0;
+        const step = 15;
 
-      document.getElementById('left').addEventListener('click', () => { rotY += step; updateRot(); });
-      document.getElementById('right').addEventListener('click', () => { rotY -= step; updateRot(); });
-      document.getElementById('up').addEventListener('click', () => { rotX -= step; updateRot(); });
-      document.getElementById('down').addEventListener('click', () => { rotX += step; updateRot(); });
+        document.getElementById('left').addEventListener('click', () => { rotY += step; updateRot(); });
+        document.getElementById('right').addEventListener('click', () => { rotY -= step; updateRot(); });
+        document.getElementById('up').addEventListener('click', () => { rotX -= step; updateRot(); });
+        document.getElementById('down').addEventListener('click', () => { rotX += step; updateRot(); });
 
-      function updateRot() { 
-        model.setAttribute('rotation', `${rotX} ${rotY} 0`); 
-      }
-
-      // --- LÓGICA DE ANIMACIÓN CONTINUA ---
-      target.addEventListener("targetFound", () => {
-        // Inicializamos el mixer solo si no está activo
-        if (!model.getAttribute('animation-mixer')) {
-          model.setAttribute('animation-mixer', {
-            clip: '*', 
-            timeScale: slider.value,
-            loop: 'repeat'
-          });
+        function updateRot() { 
+            model.setAttribute('rotation', `${rotX} ${rotY} 0`); 
         }
-      });
 
-      // Cambio de velocidad ultra-fluido (sin reiniciar la animación)
-      slider.addEventListener('input', (e) => {
-        const speed = parseFloat(e.target.value);
-        
-        // Acceso directo al motor Three.js para evitar el "salto" o reinicio
-        if (model.components['animation-mixer'] && model.components['animation-mixer'].mixer) {
-          model.components['animation-mixer'].mixer.timeScale = speed;
-        } else {
-          // Fallback por si el componente aún se está cargando
-          model.setAttribute('animation-mixer', 'timeScale', speed);
-        }
-      });
+        // --- GESTIÓN DE ANIMACIÓN ---
+        // Se activa cuando el celular detecta la imagen
+        target.addEventListener("targetFound", () => {
+            // Aseguramos que arranque con la velocidad del slider
+            model.setAttribute('animation-mixer', {clip: '*', timeScale: slider.value});
+        });
+
+        // Cambio de velocidad ultra-suave (sin saltos ni reinicios)
+        slider.addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            // Acceso directo al reloj interno del modelo (Motor Three.js)
+            if (model.components['animation-mixer'] && model.components['animation-mixer'].mixer) {
+                model.components['animation-mixer'].mixer.timeScale = speed;
+            } else {
+                model.setAttribute('animation-mixer', 'timeScale', speed);
+            }
+        });
     </script>
-  </body>
+</body>
 </html>
