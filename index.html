@@ -1,6 +1,9 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Libro AR - Mecanismo Profesional</title>
+    
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
@@ -8,16 +11,16 @@
     <style>
       body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
 
-      /* CAPA DE INTERFAZ: Forzamos que esté arriba de todo */
+      /* CAPA DE INTERFAZ: Siempre al frente y visible */
       #ui-overlay {
-        position: fixed; /* Fixed es más seguro que absolute para UI móvil */
+        position: fixed;
         top: 0; left: 0;
         width: 100vw; height: 100vh;
-        pointer-events: none; /* Deja pasar los toques al 3D si no hay botones */
-        z-index: 9999; /* Prioridad máxima */
+        pointer-events: none; /* Los toques pasan al 3D si no hay botones */
+        z-index: 9999;
       }
 
-      /* Panel de Flechas */
+      /* Panel de Flechas de Rotación */
       .rotation-controls {
         position: absolute;
         top: 20px; left: 20px;
@@ -27,7 +30,7 @@
           "left . right"
           ". down .";
         gap: 8px;
-        pointer-events: auto; /* Reactiva el toque para los botones */
+        pointer-events: auto; /* Activamos toques para los botones */
       }
 
       .btn {
@@ -39,6 +42,8 @@
         display: flex; align-items: center; justify-content: center;
         cursor: pointer;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
       }
       .btn:active { background: #4285f4; color: white; transform: scale(0.95); }
 
@@ -50,17 +55,16 @@
         position: absolute;
         bottom: 40px; left: 50%;
         transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
         padding: 15px 25px;
         border-radius: 25px;
-        width: 70%; max-width: 280px;
+        width: 75%; max-width: 280px;
         text-align: center;
         pointer-events: auto;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       }
       input[type=range] { width: 100%; accent-color: #4285f4; height: 30px; }
-      
-      strong { color: #333; display: block; margin-bottom: 5px; }
+      strong { color: #333; display: block; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; }
     </style>
   </head>
   <body>
@@ -74,7 +78,7 @@
       </div>
 
       <div class="speed-panel">
-        <strong>Velocidad del Mecanismo</strong>
+        <strong>Velocidad</strong>
         <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
       </div>
     </div>
@@ -105,6 +109,9 @@
 
       <a-light type="ambient" intensity="0.7"></a-light>
       <a-light type="directional" position="1 2 1" intensity="1"></a-light>
+      
+      <a-sky src="#refMap" visible="false"></a-sky>
+
     </a-scene>
 
     <script>
@@ -112,7 +119,7 @@
       const target = document.querySelector('#target');
       const slider = document.querySelector('#speed');
 
-      // Rotación
+      // --- LÓGICA DE ROTACIÓN ---
       let rotX = 90; let rotY = 0;
       const step = 15;
 
@@ -121,17 +128,31 @@
       document.getElementById('up').addEventListener('click', () => { rotX -= step; updateRot(); });
       document.getElementById('down').addEventListener('click', () => { rotX += step; updateRot(); });
 
-      function updateRot() { model.setAttribute('rotation', `${rotX} ${rotY} 0`); }
+      function updateRot() { 
+        model.setAttribute('rotation', `${rotX} ${rotY} 0`); 
+      }
 
-      // Animación al encontrar imagen
+      // --- LÓGICA DE ANIMACIÓN CONTINUA ---
       target.addEventListener("targetFound", () => {
-        model.setAttribute('animation-mixer', {clip: '*', timeScale: slider.value});
+        // Inicializamos el mixer solo si no está activo
+        if (!model.getAttribute('animation-mixer')) {
+          model.setAttribute('animation-mixer', {
+            clip: '*', 
+            timeScale: slider.value,
+            loop: 'repeat'
+          });
+        }
       });
 
-      // Slider
+      // Cambio de velocidad ultra-fluido (sin reiniciar la animación)
       slider.addEventListener('input', (e) => {
         const speed = parseFloat(e.target.value);
-        if (model.components['animation-mixer']) {
+        
+        // Acceso directo al motor Three.js para evitar el "salto" o reinicio
+        if (model.components['animation-mixer'] && model.components['animation-mixer'].mixer) {
+          model.components['animation-mixer'].mixer.timeScale = speed;
+        } else {
+          // Fallback por si el componente aún se está cargando
           model.setAttribute('animation-mixer', 'timeScale', speed);
         }
       });
