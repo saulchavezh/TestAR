@@ -1,79 +1,87 @@
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
-      
-      /* Contenedor principal de botones */
-      .ui-overlay {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 1000;
+      body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+
+      /* CAPA DE INTERFAZ: Forzamos que esté arriba de todo */
+      #ui-overlay {
+        position: fixed; /* Fixed es más seguro que absolute para UI móvil */
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        pointer-events: none; /* Deja pasar los toques al 3D si no hay botones */
+        z-index: 9999; /* Prioridad máxima */
       }
 
-      /* Panel de Flechas (D-Pad) - Arriba a la izquierda */
+      /* Panel de Flechas */
       .rotation-controls {
         position: absolute;
-        top: 20px;
-        left: 20px;
+        top: 20px; left: 20px;
         display: grid;
         grid-template-areas: 
           ". up ."
           "left . right"
           ". down .";
-        gap: 10px;
-        pointer-events: auto;
+        gap: 8px;
+        pointer-events: auto; /* Reactiva el toque para los botones */
       }
 
       .btn {
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.8);
+        width: 55px; height: 55px;
+        background: rgba(255, 255, 255, 0.9);
         border: 2px solid #4285f4;
-        border-radius: 10px;
+        border-radius: 12px;
         font-size: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         cursor: pointer;
-        user-select: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       }
-      .btn:active { background: #4285f4; color: white; }
+      .btn:active { background: #4285f4; color: white; transform: scale(0.95); }
 
-      #up { grid-area: up; }
-      #down { grid-area: down; }
-      #left { grid-area: left; }
-      #right { grid-area: right; }
+      #up { grid-area: up; } #down { grid-area: down; }
+      #left { grid-area: left; } #right { grid-area: right; }
 
-      /* Panel de Velocidad - Abajo */
+      /* Panel de Velocidad */
       .speed-panel {
         position: absolute;
-        bottom: 30px;
-        left: 50%;
+        bottom: 40px; left: 50%;
         transform: translateX(-50%);
         background: rgba(255, 255, 255, 0.9);
-        padding: 15px;
-        border-radius: 20px;
-        width: 80%;
-        max-width: 250px;
+        padding: 15px 25px;
+        border-radius: 25px;
+        width: 70%; max-width: 280px;
         text-align: center;
         pointer-events: auto;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       }
-      input[type=range] { width: 100%; accent-color: #4285f4; }
+      input[type=range] { width: 100%; accent-color: #4285f4; height: 30px; }
+      
+      strong { color: #333; display: block; margin-bottom: 5px; }
     </style>
   </head>
   <body>
+
+    <div id="ui-overlay">
+      <div class="rotation-controls">
+        <div class="btn" id="up">⬆️</div>
+        <div class="btn" id="left">⬅️</div>
+        <div class="btn" id="right">➡️</div>
+        <div class="btn" id="down">⬇️</div>
+      </div>
+
+      <div class="speed-panel">
+        <strong>Velocidad del Mecanismo</strong>
+        <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
+      </div>
+    </div>
     
-    <a-scene mindar-image="imageTargetSrc: targets.mind;" 
+    <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: no; uiLoading: no;" 
              color-space="sRGB" 
-             renderer="colorManagement: true, physicallyCorrectLights: true" 
+             renderer="colorManagement: true, physicallyCorrectLights: true, exposure: 1.2" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
@@ -91,65 +99,36 @@
                       position="0 0 0" 
                       scale="0.5 0.5 0.5"
                       animation-mixer="clip: *; timeScale: 1; loop: repeat;"
-                      environment="map: #refMap; intensity: 1;">
+                      environment="map: #refMap; intensity: 1.5;">
         </a-gltf-model>
       </a-entity>
 
-      <a-light type="ambient" intensity="0.5"></a-light>
+      <a-light type="ambient" intensity="0.7"></a-light>
       <a-light type="directional" position="1 2 1" intensity="1"></a-light>
     </a-scene>
-
-    <div class="ui-overlay">
-      <div class="rotation-controls">
-        <div class="btn" id="up">⬆️</div>
-        <div class="btn" id="left">⬅️</div>
-        <div class="btn" id="right">➡️</div>
-        <div class="btn" id="down">⬇️</div>
-      </div>
-
-      <div class="speed-panel">
-        <strong>Velocidad</strong><br>
-        <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
-      </div>
-    </div>
 
     <script>
       const model = document.querySelector('#modelo3D');
       const target = document.querySelector('#target');
       const slider = document.querySelector('#speed');
 
-      // Variables de rotación inicial (X=90 es parado sobre el papel)
-      let rotX = 90;
-      let rotY = 0;
-      const step = 15; // Grados que gira en cada clic
+      // Rotación
+      let rotX = 90; let rotY = 0;
+      const step = 15;
 
-      // Funciones de rotación
-      document.getElementById('left').addEventListener('click', () => {
-        rotY += step;
-        updateRotation();
-      });
-      document.getElementById('right').addEventListener('click', () => {
-        rotY -= step;
-        updateRotation();
-      });
-      document.getElementById('up').addEventListener('click', () => {
-        rotX -= step;
-        updateRotation();
-      });
-      document.getElementById('down').addEventListener('click', () => {
-        rotX += step;
-        updateRotation();
-      });
+      document.getElementById('left').addEventListener('click', () => { rotY += step; updateRot(); });
+      document.getElementById('right').addEventListener('click', () => { rotY -= step; updateRot(); });
+      document.getElementById('up').addEventListener('click', () => { rotX -= step; updateRot(); });
+      document.getElementById('down').addEventListener('click', () => { rotX += step; updateRot(); });
 
-      function updateRotation() {
-        model.setAttribute('rotation', `${rotX} ${rotY} 0`);
-      }
+      function updateRot() { model.setAttribute('rotation', `${rotX} ${rotY} 0`); }
 
-      // Lógica de inicio y velocidad
+      // Animación al encontrar imagen
       target.addEventListener("targetFound", () => {
         model.setAttribute('animation-mixer', {clip: '*', timeScale: slider.value});
       });
 
+      // Slider
       slider.addEventListener('input', (e) => {
         const speed = parseFloat(e.target.value);
         if (model.components['animation-mixer']) {
