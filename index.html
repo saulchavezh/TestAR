@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Mecanismo AR - Edición Profesional</title>
+    <title>Mecanismo AR - Versión Fluida</title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
 
-        /* CAPA DE INTERFAZ: Siempre al frente */
+        /* Capa de interfaz para rotación */
         #ui-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -21,7 +21,6 @@
             z-index: 9999;
         }
 
-        /* D-PAD de Rotación (Arriba-Izquierda) */
         .rotation-controls {
             position: absolute;
             top: 25px; left: 25px;
@@ -45,57 +44,12 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            transition: all 0.1s;
         }
         .btn:active { background: #4285f4; color: white; transform: scale(0.9); }
 
         #up { grid-area: up; } #down { grid-area: down; }
         #left { grid-area: left; } #right { grid-area: right; }
-
-        /* Panel de Velocidad (Abajo-Centro) */
-        .speed-panel {
-            position: absolute;
-            bottom: 40px; left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
-            border-radius: 30px;
-            width: 70%; max-width: 280px;
-            text-align: center;
-            pointer-events: auto;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        input[type=range] { width: 100%; accent-color: #4285f4; height: 35px; cursor: pointer; }
-        strong { color: #333; display: block; margin-bottom: 5px; font-size: 13px; letter-spacing: 1px; }
     </style>
-
-    <script>
-        // COMPONENTE PARA INYECTAR REFLEJOS DORADOS REALISTAS
-        AFRAME.registerComponent('brillo-metalico', {
-            init: function () {
-                this.el.addEventListener('model-loaded', () => {
-                    const mesh = this.el.getObject3D('mesh');
-                    const textureLoader = new THREE.TextureLoader();
-                    
-                    textureLoader.load('reflexion.jpg', (texture) => {
-                        texture.mapping = THREE.EquirectangularReflectionMapping;
-                        texture.encoding = THREE.sRGBEncoding;
-
-                        mesh.traverse((node) => {
-                            if (node.isMesh) {
-                                // Forzamos el material a ser metálico y brillante
-                                node.material.envMap = texture;
-                                node.material.envMapIntensity = 2.8; 
-                                node.material.roughness = 0.15; 
-                                node.material.metalness = 1.0;  
-                                node.material.needsUpdate = true;
-                            }
-                        });
-                    });
-                });
-            }
-        });
-    </script>
 </head>
 <body>
 
@@ -106,15 +60,10 @@
             <div id="right" class="btn">➡️</div>
             <div id="down" class="btn">⬇️</div>
         </div>
-
-        <div class="speed-panel">
-            <strong>VELOCIDAD DE ENGRANAJES</strong>
-            <input type="range" id="speed" min="0" max="3" step="0.1" value="1">
-        </div>
     </div>
     
     <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: no; uiLoading: no;" 
-             renderer="colorManagement: true; physicallyCorrectLights: true; exposure: 1.5; toneMapping: ACESFilmic;"
+             renderer="colorManagement: true; physicallyCorrectLights: true; exposure: 1.2; toneMapping: ACESFilmic;"
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
@@ -130,19 +79,16 @@
                           rotation="90 0 0" 
                           position="0 0 0" 
                           scale="0.5 0.5 0.5"
-                          animation-mixer="clip: *; timeScale: 1; loop: repeat; crossFadeDuration: 0"
-                          brillo-metalico> 
+                          animation-mixer="clip: *; loop: repeat; timeScale: 1; crossFadeDuration: 0"> 
             </a-gltf-model>
         </a-entity>
 
-        <a-light type="ambient" intensity="0.3"></a-light>
-        <a-light type="directional" position="1 2 1" intensity="0.7"></a-light>
+        <a-light type="ambient" intensity="0.5"></a-light>
+        <a-light type="directional" position="1 2 1" intensity="0.8"></a-light>
     </a-scene>
 
     <script>
         const model = document.querySelector('#modelo3D');
-        const target = document.querySelector('#target');
-        const slider = document.querySelector('#speed');
 
         // --- GESTIÓN DE ROTACIÓN ---
         let rotX = 90; let rotY = 0;
@@ -157,23 +103,8 @@
             model.setAttribute('rotation', `${rotX} ${rotY} 0`); 
         }
 
-        // --- GESTIÓN DE ANIMACIÓN ---
-        // Se activa cuando el celular detecta la imagen
-        target.addEventListener("targetFound", () => {
-            // Aseguramos que arranque con la velocidad del slider
-            model.setAttribute('animation-mixer', {clip: '*', timeScale: slider.value});
-        });
-
-        // Cambio de velocidad ultra-suave (sin saltos ni reinicios)
-        slider.addEventListener('input', (e) => {
-            const speed = parseFloat(e.target.value);
-            // Acceso directo al reloj interno del modelo (Motor Three.js)
-            if (model.components['animation-mixer'] && model.components['animation-mixer'].mixer) {
-                model.components['animation-mixer'].mixer.timeScale = speed;
-            } else {
-                model.setAttribute('animation-mixer', 'timeScale', speed);
-            }
-        });
+        // Eliminamos la lógica de targetFound que reseteaba la animación,
+        // ahora el animation-mixer se encarga de que sea un bucle infinito y fluido.
     </script>
 </body>
 </html>
