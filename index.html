@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Mecanismo AR Profesional</title>
+    <title>Mecanismo AR Profesional con Efectos</title>
     
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+    
+    <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
 
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; }
-
-        /* Capa de Interfaz */
         #ui-overlay {
             position: fixed;
             top: 0; left: 0;
@@ -20,97 +20,81 @@
             pointer-events: none;
             z-index: 9999;
         }
-
-        /* Controles de Rotación (D-Pad) */
         .rotation-controls {
             position: absolute;
             top: 25px; left: 25px;
             display: grid;
-            grid-template-areas: 
-                ". up ."
-                "left . right"
-                ". down .";
+            grid-template-areas: ". up ." "left . right" ". down .";
             gap: 10px;
             pointer-events: auto;
         }
-
-        /* Control de Velocidad (Slider) */
-        .speed-control {
+        .btn {
+            width: 50px; height: 50px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            border-radius: 50%;
+            color: white; font-size: 20px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        #speed-container {
             position: absolute;
             bottom: 40px; left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(0,0,0,0.6);
             padding: 15px 25px;
-            border-radius: 50px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            border-radius: 30px;
             pointer-events: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            width: 200px;
+            text-align: center;
+            color: white;
         }
-
-        .speed-control label {
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .btn {
-            width: 55px; height: 55px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #007bff;
-            border-radius: 12px;
-            font-size: 24px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .btn:active { background: #007bff; color: white; transform: scale(0.9); }
-
-        #up { grid-area: up; } #down { grid-area: down; }
-        #left { grid-area: left; } #right { grid-area: right; }
-
-        input[type=range] { width: 100%; cursor: pointer; }
+        input[type=range] { width: 200px; }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
         <div class="rotation-controls">
-            <div id="up" class="btn">⬆️</div>
-            <div id="left" class="btn">⬅️</div>
-            <div id="right" class="btn">➡️</div>
-            <div id="down" class="btn">⬇️</div>
+            <div style="grid-area: up" class="btn" id="up">▲</div>
+            <div style="grid-area: left" class="btn" id="left">◀</div>
+            <div style="grid-area: right" class="btn" id="right">▶</div>
+            <div style="grid-area: down" class="btn" id="down">▼</div>
         </div>
 
-        <div class="speed-control">
-            <label>Velocidad</label>
-            <input type="range" id="speedSlider" min="0.2" max="1" step="0.01" value="1">
+        <div id="speed-container">
+            <label>Velocidad Máxima para Efectos</label><br>
+            <input type="range" id="speedSlider" min="0" max="2" step="0.1" value="1">
         </div>
     </div>
-    
-    <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: no;" 
-             renderer="colorManagement: true; exposure: 1.2;"
-             vr-mode-ui="enabled: false">
-      
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
         <a-assets>
-            <a-asset-item id="engranesModel" src="engranes.glb"></a-asset-item>
+            <a-asset-item id="modelo-engranes" src="engranes.glb"></a-asset-item>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            <a-gltf-model id="modelo3D" 
-                          src="#engranesModel" 
-                          rotation="90 0 0" 
+            <a-entity id="modelo3D" 
+                      gltf-model="#modelo-engranes" 
+                      position="0 0 0" 
+                      rotation="90 0 0" 
+                      scale="0.5 0.5 0.5"
+                      animation-mixer="loop: repeat; timeScale: 1; crossFadeDuration: 0">
+                
+                <a-entity id="efectoChispas" 
                           position="0 0 0" 
-                          scale="0.5 0.5 0.5"
-                          animation-mixer="loop: repeat; timeScale: 1; crossFadeDuration: 0"> 
-            </a-gltf-model>
+                          visible="false"
+                          particle-system="color: #FFD700, #FFA500; size: 0.1; particleCount: 150; velocityValue: 0 2 0; velocitySpread: 2 1 2; accelerationValue: 0 -3 0">
+                </a-entity>
+
+                <a-entity id="efectoHumo" 
+                          position="0 0.2 0" 
+                          visible="false"
+                          particle-system="preset: dust; color: #CCCCCC; size: 1.2; opacity: 0.4; particleCount: 30; velocityValue: 0 0.4 0">
+                </a-entity>
+
+            </a-entity>
         </a-entity>
 
         <a-light type="ambient" intensity="0.7"></a-light>
@@ -120,26 +104,35 @@
     <script>
         const model = document.querySelector('#modelo3D');
         const slider = document.querySelector('#speedSlider');
+        const chispas = document.querySelector('#efectoChispas');
+        const humo = document.querySelector('#efectoHumo');
 
-        // --- LÓGICA DE ROTACIÓN ---
+        // --- LÓGICA DE ROTACIÓN (Tu código original) ---
         let rotX = 90; let rotY = 0;
-        const step = 15; // Grados por clic
-
+        const step = 15;
         document.getElementById('left').addEventListener('click', () => { rotY += step; updateRot(); });
         document.getElementById('right').addEventListener('click', () => { rotY -= step; updateRot(); });
         document.getElementById('up').addEventListener('click', () => { rotX -= step; updateRot(); });
         document.getElementById('down').addEventListener('click', () => { rotX += step; updateRot(); });
 
-        function updateRot() { 
-            model.setAttribute('rotation', `${rotX} ${rotY} 0`); 
-        }
+        function updateRot() { model.setAttribute('rotation', `${rotX} ${rotY} 0`); }
 
-        // --- LÓGICA DE VELOCIDAD ---
+        // --- LÓGICA DE VELOCIDAD Y EFECTOS ---
         slider.addEventListener('input', (e) => {
             const speed = parseFloat(e.target.value);
-            // Accedemos al componente animation-mixer para cambiar la velocidad en tiempo real
+            
+            // Actualizar la animación del modelo
             if (model.components['animation-mixer']) {
                 model.setAttribute('animation-mixer', 'timeScale', speed);
+            }
+
+            // ACTIVAR EFECTOS SOLO EN VELOCIDAD MÁXIMA (2.0)
+            if (speed >= 2.0) {
+                chispas.setAttribute('visible', 'true');
+                humo.setAttribute('visible', 'true');
+            } else {
+                chispas.setAttribute('visible', 'false');
+                humo.setAttribute('visible', 'false');
             }
         });
     </script>
