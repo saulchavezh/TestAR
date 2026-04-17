@@ -1,110 +1,34 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Mecanismo AR - Versión Fluida</title>
-    
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
-
-    <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-
-        /* Capa de interfaz para rotación */
-        #ui-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        .rotation-controls {
-            position: absolute;
-            top: 25px; left: 25px;
-            display: grid;
-            grid-template-areas: 
-                ". up ."
-                "left . right"
-                ". down .";
-            gap: 10px;
-            pointer-events: auto;
-        }
-
-        .btn {
-            width: 55px; height: 55px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #4285f4;
-            border-radius: 12px;
-            font-size: 24px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .btn:active { background: #4285f4; color: white; transform: scale(0.9); }
-
-        #up { grid-area: up; } #down { grid-area: down; }
-        #left { grid-area: left; } #right { grid-area: right; }
-    </style>
 </head>
-<body>
-
-    <div id="ui-overlay">
-        <div class="rotation-controls">
-            <div id="up" class="btn">⬆️</div>
-            <div id="left" class="btn">⬅️</div>
-            <div id="right" class="btn">➡️</div>
-            <div id="down" class="btn">⬇️</div>
-        </div>
-    </div>
+<body style="margin:0; overflow:hidden;">
     
-    <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: no; uiLoading: no;" 
-             renderer="colorManagement: true; physicallyCorrectLights: true; exposure: 1.2; toneMapping: ACESFilmic;"
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
-      
+    <a-scene mindar-image="imageTargetSrc: targets.mind; uiScanning: no;" 
+             renderer="colorManagement: true; exposure: 1.0;"
+             vr-mode-ui="enabled: false">
+        
         <a-assets>
-            <a-asset-item id="engranesModel" src="engranes.glb"></a-asset-item>
+            <a-asset-item id="modelo" src="engranes.glb"></a-asset-item>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-gltf-model id="modelo3D" 
-                          src="#engranesModel" 
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-gltf-model src="#modelo" 
                           rotation="90 0 0" 
                           position="0 0 0" 
                           scale="0.5 0.5 0.5"
-                          animation-mixer="clip: *; loop: repeat; timeScale: 1; crossFadeDuration: 0"> 
+                          animation-mixer="loop: repeat; clampWhenFinished: false; crossFadeDuration: 0">
             </a-gltf-model>
         </a-entity>
 
-        <a-light type="ambient" intensity="0.5"></a-light>
-        <a-light type="directional" position="1 2 1" intensity="0.8"></a-light>
+        <a-light type="ambient" intensity="0.7"></a-light>
+        <a-light type="directional" position="1 2 1" intensity="0.5"></a-light>
     </a-scene>
-
-    <script>
-        const model = document.querySelector('#modelo3D');
-
-        // --- GESTIÓN DE ROTACIÓN ---
-        let rotX = 90; let rotY = 0;
-        const step = 15;
-
-        document.getElementById('left').addEventListener('click', () => { rotY += step; updateRot(); });
-        document.getElementById('right').addEventListener('click', () => { rotY -= step; updateRot(); });
-        document.getElementById('up').addEventListener('click', () => { rotX -= step; updateRot(); });
-        document.getElementById('down').addEventListener('click', () => { rotX += step; updateRot(); });
-
-        function updateRot() { 
-            model.setAttribute('rotation', `${rotX} ${rotY} 0`); 
-        }
-
-        // Eliminamos la lógica de targetFound que reseteaba la animación,
-        // ahora el animation-mixer se encarga de que sea un bucle infinito y fluido.
-    </script>
 </body>
 </html>
